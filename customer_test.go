@@ -449,3 +449,29 @@ func TestCustomerListOrders(t *testing.T) {
 	order := orders[0]
 	orderTests(t, order)
 }
+
+func TestCustomerListTags(t *testing.T) {
+	setup()
+	defer teardown()
+
+	httpmock.RegisterResponder(
+		"GET",
+		"https://fooshop.myshopify.com/admin/customers/tags.json",
+		httpmock.NewBytesResponder(200, loadFixture("customer_tags.json")),
+	)
+
+	tags, err := client.Customer.ListTags(nil)
+	if err != nil {
+		t.Errorf("Customer.ListTags returned error: %v", err)
+	}
+
+	// Check that tags were parsed
+	if len(tags) != 2 {
+		t.Errorf("Customer.ListTags got %v tags, expected: 2", len(tags))
+	}
+
+	// Check correct tag was read
+	if len(tags) > 0 && tags[0] != "tag1" {
+		t.Errorf("Customer.ListTags got %v as the first tag, expected: 'tag1'", tags[0])
+	}
+}
