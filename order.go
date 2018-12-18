@@ -18,6 +18,7 @@ type OrderService interface {
 	Count(interface{}) (int, error)
 	Get(int, interface{}) (*Order, error)
 	Create(Order) (*Order, error)
+	Update(Order) (*Order, error)
 
 	// MetafieldsService used for Order resource to communicate with Metafields resource
 	MetafieldsService
@@ -311,6 +312,15 @@ func (s *OrderServiceOp) Create(order Order) (*Order, error) {
 	wrappedData := OrderResource{Order: &order}
 	resource := new(OrderResource)
 	err := s.client.Post(path, wrappedData, resource)
+	return resource.Order, err
+}
+
+// Update order
+func (s *OrderServiceOp) Update(order Order) (*Order, error) {
+	path := fmt.Sprintf("%s/%d.json", ordersBasePath, order.ID)
+	wrappedData := OrderResource{Order: &order}
+	resource := new(OrderResource)
+	err := s.client.Put(path, wrappedData, resource)
 	return resource.Order, err
 }
 
