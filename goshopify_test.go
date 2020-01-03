@@ -1,6 +1,7 @@
 package goshopify
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -258,6 +259,66 @@ func TestNewRequestError(t *testing.T) {
 			t.Errorf("NewRequest(%v, %v, %v, %v) err = %v, expected error", c.method, c.inURL, c.body, c.options, err)
 		}
 	}
+}
+
+func TestDefaultBackoff(t *testing.T) {
+	setup()
+	defer teardown()
+	expected := 1 * time.Second
+	actual := DefaultBackoff(time.Second, 30*time.Second, 0)
+	if actual != expected {
+		t.Errorf("Default Backoff returned: %d, expected %d", actual, expected)
+	}
+	expected = 2 * time.Second
+	actual = DefaultBackoff(time.Second, 30*time.Second, 1)
+	if actual != expected {
+		t.Errorf("Default Backoff returned: %d, expected %d", actual, expected)
+	}
+	expected = 4 * time.Second
+	actual = DefaultBackoff(time.Second, 30*time.Second, 2)
+	if actual != expected {
+		t.Errorf("Default Backoff returned: %d, expected %d", actual, expected)
+	}
+	actual = DefaultBackoff(time.Second, 30*time.Second, 31)
+	expected = 30 * time.Second
+	if actual != expected {
+		t.Errorf("Default Backoff returned: %d, expected %d", actual, expected)
+	}
+}
+
+func TestDefaultRetryPolicy(t *testing.T) {
+	setup()
+	defer teardown()
+
+	// Everything went well
+	resp := &http.Response{
+		StatusCode: 200,
+		Body:       ioutil.NopCloser(bytes.NewBufferString("Hello World")),
+	}
+
+	expected := false
+	retry, err := DefaultRetryPolicy(resp, nil)
+	if retry != expected || err != nil {
+		t.Errorf("Default retry returned: %t, expected %t", retry, expected)
+	}
+
+	// When response is 500
+	resp = &http.Response{
+		StatusCode: 500,
+		Body:       ioutil.NopCloser(bytes.NewBufferString("Something bad")),
+	}
+	expected = true
+	retry, err = DefaultRetryPolicy(resp, nil)
+	if retry != expected {
+		t.Errorf("Default retry returned: %t, expected %t", retry, expected)
+	}
+
+	// When an error is passed
+	retry, err = DefaultRetryPolicy(resp, errors.New("unknown error"))
+	if retry != expected || err == nil {
+		t.Errorf("Default retry returned: %t, expected %t", retry, expected)
+	}
+
 }
 
 func TestDo(t *testing.T) {

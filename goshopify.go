@@ -5,7 +5,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -25,6 +27,15 @@ const (
 var (
 	// Shopify API version YYYY-MM - defaults to admin which uses the oldest stable version of the api
 	globalApiPathPrefix string = "admin"
+
+	// Default retry configuration
+	defaultRetryWaitMin = 1 * time.Second
+	defaultRetryWaitMax = 30 * time.Second
+	defaultRetryMax     = 3
+
+	// We need to consume response bodies to maintain http connections, but
+	// limit the size we consume to respReadLimit.
+	respReadLimit = int64(4096)
 )
 
 // App represents basic app settings such as Api key, secret, scope, and redirect url.
@@ -35,6 +46,39 @@ type App struct {
 	RedirectUrl string
 	Scope       string
 	Password    string
+}
+
+// CheckRetry specifies a policy for handling retries
+type CheckRetry func(resp *http.Response, err error) (bool, error)
+
+// DefaultRetryPolicy provides a default callback for Client CheckRetry,
+// retrying on connection errors and server errors
+func DefaultRetryPolicy(resp *http.Response, err error) (bool, error) {
+	if err != nil {
+		return true, err
+	}
+
+	if resp.StatusCode == 0 || (resp.StatusCode >= 500 && resp.StatusCode != 501) {
+		return true, nil
+	}
+	return false, nil
+}
+
+// Backoff specifies a policy for how long to wait between retries.
+// It is called after a failing request to determine the amount of time
+// that should pass before trying again.
+type Backoff func(min, max time.Duration, attemptNum int) time.Duration
+
+// DefaultBackoff provides a default callback for Client.Backoff which
+// will perform exponential backoff based on the attempt number and limited
+// by the provided minimum and maximum durations.
+func DefaultBackoff(min, max time.Duration, attemptNum int) time.Duration {
+	mult := math.Pow(2, float64(attemptNum)) * float64(min)
+	sleep := time.Duration(mult)
+	if float64(sleep) != mult || sleep > max {
+		sleep = max
+	}
+	return sleep
 }
 
 // Client manages communication with the Shopify API.
@@ -52,6 +96,17 @@ type Client struct {
 
 	// A permanent access token
 	token string
+
+	// Retry Mechanism
+	RetryWaitMin time.Duration
+	RetryWaitMax time.Duration
+	RetryMax     int
+
+	// CheckRetry specifies the policy for retries and is called after each request
+	CheckRetry CheckRetry
+
+	// Backoff specifies how long to wait between retries
+	Backoff Backoff
 
 	// Services used for communicating with the API
 	Product                    ProductService
@@ -140,11 +195,22 @@ type RateLimitError struct {
 	RetryAfter int
 }
 
+// Request wraps the metadata needed to create a HTTP requests
+type Request struct {
+	// body is seekable reader over the req body payload.
+	// This is used to rewind the data on each retry
+	body io.ReadSeeker
+
+	// Embed an http request directly, The make *Request act exactly like
+	// *http.Request, with the support for all methods
+	*http.Request
+}
+
 // Creates an API request. A relative URL can be provided in urlStr, which will
 // be resolved to the BaseURL of the Client. Relative URLS should always be
 // specified without a preceding slash. If specified, the value pointed to by
 // body is JSON encoded and included as the request body.
-func (c *Client) NewRequest(method, urlStr string, body, options interface{}) (*http.Request, error) {
+func (c *Client) NewRequest(method, urlStr string, body, options interface{}) (*Request, error) {
 	rel, err := url.Parse(urlStr)
 	if err != nil {
 		return nil, err
@@ -171,14 +237,20 @@ func (c *Client) NewRequest(method, urlStr string, body, options interface{}) (*
 	// A bit of JSON ceremony
 	var js []byte = nil
 
+	// Wrap the body in a noop ReadCloser if non-nil. This prevents
+	// reader from being closed by the HTTP client
+	var rcBody io.ReadCloser
+	var bodyReader io.ReadSeeker
 	if body != nil {
 		js, err = json.Marshal(body)
 		if err != nil {
 			return nil, err
 		}
 	}
+	bodyReader = bytes.NewReader(js)
+	rcBody = ioutil.NopCloser(bodyReader)
 
-	req, err := http.NewRequest(method, u.String(), bytes.NewBuffer(js))
+	req, err := http.NewRequest(method, u.String(), rcBody)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +263,7 @@ func (c *Client) NewRequest(method, urlStr string, body, options interface{}) (*
 	} else if c.app.Password != "" {
 		req.SetBasicAuth(c.app.ApiKey, c.app.Password)
 	}
-	return req, nil
+	return &Request{bodyReader, req}, nil
 }
 
 // Option is used to configure client with options
@@ -225,7 +297,17 @@ func NewClient(app App, shopName, token string, opts ...Option) *Client {
 
 	baseURL, _ := url.Parse(ShopBaseUrl(shopName))
 
-	c := &Client{Client: httpClient, app: app, baseURL: baseURL, token: token}
+	c := &Client{
+		Client:       httpClient,
+		app:          app,
+		baseURL:      baseURL,
+		token:        token,
+		RetryWaitMin: defaultRetryWaitMin,
+		RetryWaitMax: defaultRetryWaitMax,
+		RetryMax:     defaultRetryMax,
+		CheckRetry:   DefaultRetryPolicy,
+		Backoff:      DefaultBackoff,
+	}
 	c.Product = &ProductServiceOp{client: c}
 	c.CustomCollection = &CustomCollectionServiceOp{client: c}
 	c.SmartCollection = &SmartCollectionServiceOp{client: c}
@@ -265,27 +347,86 @@ func NewClient(app App, shopName, token string, opts ...Option) *Client {
 // Do sends an API request and populates the given interface with the parsed
 // response. It does not make much sense to call Do without a prepared
 // interface instance.
-func (c *Client) Do(req *http.Request, v interface{}) error {
-	resp, err := c.Client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
+func (c *Client) Do(req *Request, v interface{}) error {
+	var errG error
 
-	err = CheckResponseError(resp)
-	if err != nil {
-		return err
-	}
+	for i := 0; ; i++ {
+		var code int
 
-	if v != nil {
-		decoder := json.NewDecoder(resp.Body)
-		err := decoder.Decode(&v)
-		if err != nil {
-			return err
+		if req.body != nil {
+			if _, err := req.body.Seek(0, 0); err != nil {
+				return fmt.Errorf("failed to seek body: %v", err)
+			}
+			req.Body = ioutil.NopCloser(req.body)
 		}
+
+		// Attempt the request
+		resp, err := c.Client.Do(req.Request)
+		if err != nil {
+			// we don't error to wait for the retry
+			fmt.Printf("error %s %s request failed: %v", req.Method, req.URL, err)
+			errG = err
+		}
+		if resp != nil {
+			code = resp.StatusCode
+		}
+
+		// Check if it should retry
+		checkOK, checkErr := c.CheckRetry(resp, err)
+		if !checkOK {
+			if checkErr != nil {
+				err = checkErr
+			}
+			err = CheckResponseError(resp)
+			if err != nil {
+				return err
+			}
+
+			if v != nil {
+				decoder := json.NewDecoder(resp.Body)
+				err := decoder.Decode(&v)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
+		remain := c.RetryMax - i
+		if remain <= 0 {
+			if resp != nil {
+				err = CheckResponseError(resp)
+				if err != nil {
+					return err
+				}
+			}
+			break
+		}
+
+		if err == nil && resp != nil {
+			c.drainBody(resp.Body)
+		}
+
+		wait := c.Backoff(c.RetryWaitMin, c.RetryWaitMax, i)
+		desc := fmt.Sprintf("%s %s", req.Method, req.URL)
+		if code > 0 {
+			desc = fmt.Sprintf("%s (status: %d)", desc, code)
+		}
+		fmt.Printf("[DEBUG] %s: retrying in %s (%d left)", desc, wait, remain)
+		time.Sleep(wait)
 	}
 
-	return nil
+	fmt.Printf("%s %s giving up after %d attempts, err: %v", req.Method, req.URL, c.RetryMax+1, errG)
+
+	return errG
+}
+
+func (c *Client) drainBody(body io.ReadCloser) {
+	defer body.Close()
+	_, err := io.Copy(ioutil.Discard, io.LimitReader(body, respReadLimit))
+	if err != nil {
+		fmt.Printf("error reading response body: %v", err)
+	}
 }
 
 func wrapSpecificError(r *http.Response, err ResponseError) error {

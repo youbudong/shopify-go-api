@@ -7,8 +7,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+
 	"gopkg.in/jarcoal/httpmock.v1"
-	"net/http"
 )
 
 func TestAppAuthorizeUrl(t *testing.T) {
@@ -105,7 +105,7 @@ func TestVerifyWebhookRequest(t *testing.T) {
 			req.Header.Add("X-Shopify-Hmac-Sha256", c.hmac)
 		}
 
-		isValid := app.VerifyWebhookRequest(req)
+		isValid := app.VerifyWebhookRequest(req.Request)
 
 		if isValid != c.expected {
 			t.Errorf("Webhook.verify was expecting %t got %t", c.expected, isValid)
@@ -124,7 +124,7 @@ func TestVerifyWebhookRequestVerbose(t *testing.T) {
 		validHMACSignature          = "hMTq0K2x7oyOjoBwGYeTj5oxfnaVYXzbanUG9aajpKI="
 		validHMACSignatureEmptyBody = "ZAZ6P4c14f6v798OCPYCodtdf9g8Z+GfthdfCgyhUYg="
 		longHMAC                    = "VGhpc2lzdGhlc29uZ3RoYXRuZXZlcmVuZHN5ZXNpdGdvZXNvbmFuZG9ubXlmcmllbmRzc29tZXBlb3BsZXN0YXJ0aW5nc2luZ2luZ2l0bm90a25vd2luZ3doYXRpdHdhc2FuZG5vd2NvbnRpbnVlc2luZ2luZ2l0Zm9yZXZlcmp1c3RiZWNhdXNlCg=="
-		req                         *http.Request
+		req                         *Request
 		err                         error
 	)
 	shortHMACBytes, _ := base64.StdEncoding.DecodeString(shortHMAC)
@@ -167,7 +167,7 @@ func TestVerifyWebhookRequestVerbose(t *testing.T) {
 			req.Header.Add("X-Shopify-Hmac-Sha256", c.hmac)
 		}
 
-		isValid, err := app.VerifyWebhookRequestVerbose(req)
+		isValid, err := app.VerifyWebhookRequestVerbose(req.Request)
 		if err == nil && c.expectedError != nil {
 			t.Errorf("Expected error %s got nil", c.expectedError.Error())
 		}
@@ -192,7 +192,7 @@ func TestVerifyWebhookRequestVerbose(t *testing.T) {
 	// Other error cases
 	oldSecret := app.ApiSecret
 	app.ApiSecret = ""
-	isValid, err := app.VerifyWebhookRequestVerbose(req)
+	isValid, err := app.VerifyWebhookRequestVerbose(req.Request)
 	if err == nil || isValid == true || err.Error() != errors.New("ApiSecret is empty").Error() {
 		t.Errorf("Expected error %s got nil or true", errors.New("ApiSecret is empty"))
 	}
@@ -200,7 +200,7 @@ func TestVerifyWebhookRequestVerbose(t *testing.T) {
 	app.ApiSecret = oldSecret
 
 	req.Body = errReader{}
-	isValid, err = app.VerifyWebhookRequestVerbose(req)
+	isValid, err = app.VerifyWebhookRequestVerbose(req.Request)
 	if err == nil || isValid == true || err.Error() != errors.New("test-error").Error() {
 		t.Errorf("Expected error %s got %s", errors.New("test-error"), err)
 	}
