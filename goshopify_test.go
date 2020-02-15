@@ -356,9 +356,12 @@ func TestDo(t *testing.T) {
 		httpmock.RegisterResponder("GET", shopUrl, c.responder)
 
 		body := new(MyStruct)
-		req, _ := client.NewRequest("GET", c.url, nil, nil)
-		err := client.Do(req, body)
+		req, err := client.NewRequest("GET", c.url, nil, nil)
+		if err != nil {
+			t.Error("error creating request: ", err)
+		}
 
+		err = client.Do(req, body)
 		if err != nil {
 			if e, ok := err.(*url.Error); ok {
 				err = e.Err
@@ -501,16 +504,19 @@ func TestCreateAndDo(t *testing.T) {
 	cases := []struct {
 		url       string
 		responder httpmock.Responder
+		options   interface{}
 		expected  interface{}
 	}{
 		{
 			"foo/1",
 			httpmock.NewStringResponder(200, `{"foo": "bar"}`),
+			nil,
 			&MyStruct{Foo: "bar"},
 		},
 		{
 			"foo/2",
 			httpmock.NewStringResponder(404, `{"error": "does not exist"}`),
+			nil,
 			ResponseError{Status: 404, Message: "does not exist"},
 		},
 
@@ -518,19 +524,28 @@ func TestCreateAndDo(t *testing.T) {
 		{
 			"/foo/1",
 			httpmock.NewStringResponder(200, `{"foo": "bar"}`),
+			nil,
 			&MyStruct{Foo: "bar"},
 		},
 		{
 			"/foo/2",
 			httpmock.NewStringResponder(404, `{"error": "does not exist"}`),
+			nil,
 			ResponseError{Status: 404, Message: "does not exist"},
+		},
+		// Problem with options to test c.NewRequest() returning error in createAndDoGetHeaders()
+		{
+			"foo/1",
+			httpmock.NewStringResponder(500, ""),
+			123,
+			errors.New("query: Values() expects struct input. Got int"),
 		},
 	}
 
 	for _, c := range cases {
 		httpmock.RegisterResponder("GET", mockPrefix+c.url, c.responder)
 		body := new(MyStruct)
-		err := client.CreateAndDo("GET", c.url, nil, nil, body)
+		err := client.CreateAndDo("GET", c.url, nil, c.options, body)
 
 		if err != nil && fmt.Sprint(err) != fmt.Sprint(c.expected) {
 			t.Errorf("CreateAndDo(): expected error %v, actual %v", c.expected, err)
