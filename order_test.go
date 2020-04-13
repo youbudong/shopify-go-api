@@ -715,7 +715,7 @@ func TestLineItemUnmarshalJSON(t *testing.T) {
 	testLineItem(t, expected, actual)
 }
 
-// TestLineItemUnmarshalJSON0- tests unmarsalling a LineItem from invalid
+// TestLineItemUnmarshalJSONInvalid0 tests unmarsalling a LineItem from invalid json
 func TestLineItemUnmarshalJSONInvalid0(t *testing.T) {
 	setup()
 	defer teardown()
@@ -728,7 +728,7 @@ func TestLineItemUnmarshalJSONInvalid0(t *testing.T) {
 	}
 }
 
-// TestLineItemUnmarshalJSON1 tests unmarsalling a LineItem with properties that are a struct with invalid
+// TestLineItemUnmarshalJSONInvalid1 tests unmarsalling a LineItem with properties that are a struct with invalid
 // values
 func TestLineItemUnmarshalJSONInvalid1(t *testing.T) {
 	setup()
@@ -742,7 +742,7 @@ func TestLineItemUnmarshalJSONInvalid1(t *testing.T) {
 	}
 }
 
-// TestLineItemUnmarshalJSON1 tests unmarsalling a LineItem with properties that are an array with invalid
+// TestLineItemUnmarshalJSONInvalid2 tests unmarsalling a LineItem with properties that are an array with invalid
 // values
 func TestLineItemUnmarshalJSONInvalid2(t *testing.T) {
 	setup()
@@ -768,7 +768,7 @@ func TestLineItemUnmarshalJSONPropertiesEmptyObject(t *testing.T) {
 		t.Errorf("LineItem.UnmarshalJSON returned error: %v", err)
 	}
 
-	expected := propertiesEmptyObjectLientItem()
+	expected := propertiesEmptyStructLientItem()
 
 	testLineItem(t, expected, actual)
 }
@@ -785,7 +785,7 @@ func TestLineItemUnmarshalJSONPropertiesObject(t *testing.T) {
 		t.Errorf("LineItem.UnmarshalJSON returned error: %v", err)
 	}
 
-	expected := propertiesObjectLientItem()
+	expected := propertiesStructLientItem()
 
 	testLineItem(t, expected, actual)
 }
@@ -964,13 +964,13 @@ func testTaxLines(t *testing.T, expected, actual []TaxLine) {
 	}
 }
 
-func propertiesEmptyObjectLientItem() LineItem {
+func propertiesEmptyStructLientItem() LineItem {
 	return LineItem{
 		Properties: []NoteAttribute{},
 	}
 }
 
-func propertiesObjectLientItem() LineItem {
+func propertiesStructLientItem() LineItem {
 	return LineItem{
 		Properties: []NoteAttribute{
 			NoteAttribute{
