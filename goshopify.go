@@ -106,6 +106,7 @@ type Client struct {
 	Page                       PageService
 	StorefrontAccessToken      StorefrontAccessTokenService
 	Collect                    CollectService
+	Collection                 CollectionService
 	Location                   LocationService
 	DiscountCode               DiscountCodeService
 	PriceRule                  PriceRuleService
@@ -278,6 +279,7 @@ func NewClient(app App, shopName, token string, opts ...Option) *Client {
 	c.StorefrontAccessToken = &StorefrontAccessTokenServiceOp{client: c}
 	c.UsageCharge = &UsageChargeServiceOp{client: c}
 	c.Collect = &CollectServiceOp{client: c}
+	c.Collection = &CollectionServiceOp{client: c}
 	c.Location = &LocationServiceOp{client: c}
 	c.DiscountCode = &DiscountCodeServiceOp{client: c}
 	c.PriceRule = &PriceRuleServiceOp{client: c}
