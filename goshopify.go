@@ -22,6 +22,8 @@ import (
 
 const (
 	UserAgent = "goshopify/1.0.0"
+	// UnstableApiVersion Shopify API version for accessing unstable API features
+	UnstableApiVersion = "unstable"
 
 	// Shopify API version YYYY-MM - defaults to admin which uses the oldest stable version of the api
 	defaultApiPathPrefix = "admin"
@@ -87,7 +89,7 @@ type Client struct {
 	Customer                   CustomerService
 	CustomerAddress            CustomerAddressService
 	Order                      OrderService
-	Fulfillment		   FulfillmentService
+	Fulfillment                FulfillmentService
 	DraftOrder                 DraftOrderService
 	Shop                       ShopService
 	Webhook                    WebhookService
