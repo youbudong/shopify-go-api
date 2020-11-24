@@ -32,6 +32,36 @@ func TestAppAuthorizeUrl(t *testing.T) {
 	}
 }
 
+func TestAppGetAuthorizeUrl(t *testing.T) {
+	setup()
+	defer teardown()
+
+	cases := []struct {
+		shopName      string
+		nonce         string
+		expected      string
+		expectedError string
+	}{
+		{"fooshop", "thenonce", "https://fooshop.myshopify.com/admin/oauth/authorize?client_id=apikey&redirect_uri=https%3A%2F%2Fexample.com%2Fcallback&scope=read_products&state=thenonce", ""},
+		{"foo shop", "thenonce", "", (&url.Error{
+			Op:  "parse",
+			URL: "https://foo shop.myshopify.com",
+			Err: url.InvalidHostError(" "),
+		}).Error()},
+	}
+
+	for _, c := range cases {
+		actual, err := app.GetAuthorizeUrl(c.shopName, c.nonce)
+		if actual != c.expected {
+			t.Errorf("App.GetAuthorizeUrl(): expected %s, actual %s", c.expected, actual)
+		}
+		if c.expectedError != "" && err.Error() != c.expectedError ||
+			c.expectedError == "" && err != nil {
+			t.Errorf("App.GetAuthorizeUrl(): expected error %s, actual error %s", c.expectedError, err)
+		}
+	}
+}
+
 func TestAppGetAccessToken(t *testing.T) {
 	setup()
 	defer teardown()
