@@ -2,7 +2,9 @@ package goshopify
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
+	"time"
 )
 
 func TestWithVersion(t *testing.T) {
@@ -59,5 +61,14 @@ func TestWithUnstableVersion(t *testing.T) {
 	expected := fmt.Sprintf("admin/api/%s", UnstableApiVersion)
 	if c.pathPrefix != expected {
 		t.Errorf("WithVersion client.pathPrefix = %s, expected %s", c.pathPrefix, expected)
+	}
+}
+
+func TestWithHTTPClient(t *testing.T) {
+	c := NewClient(app, "fooshop", "abcd", WithHTTPClient(&http.Client{Timeout: 30 * time.Second}))
+	expected := 30 * time.Second
+
+	if c.Client.Timeout.String() != expected.String() {
+		t.Errorf("WithVersion client.Client = %s, expected %s", c.Client.Timeout, expected)
 	}
 }
