@@ -51,25 +51,25 @@ type PriceRule struct {
 	PrerequisiteCollectionIds              []int64                                 `json:"prerequisite_collection_ids,omitempty"`
 	PrerequisiteSavedSearchIds             []int64                                 `json:"prerequisite_saved_search_ids,omitempty"`
 	PrerequisiteCustomerIds                []int64                                 `json:"prerequisite_customer_ids,omitempty"`
-	PrerequisiteSubtotalRange              *prerequisiteSubtotalRange              `json:"prerequisite_subtotal_range,omitempty"`
-	PrerequisiteQuantityRange              *prerequisiteQuantityRange              `json:"prerequisite_quantity_range,omitempty"`
-	PrerequisiteShippingPriceRange         *prerequisiteShippingPriceRange         `json:"prerequisite_shipping_price_range,omitempty"`
-	PrerequisiteToEntitlementQuantityRatio *prerequisiteToEntitlementQuantityRatio `json:"prerequisite_to_entitlement_quantity_ratio,omitempty"`
+	PrerequisiteSubtotalRange              *PrerequisiteSubtotalRange              `json:"prerequisite_subtotal_range,omitempty"`
+	PrerequisiteQuantityRange              *PrerequisiteQuantityRange              `json:"prerequisite_quantity_range,omitempty"`
+	PrerequisiteShippingPriceRange         *PrerequisiteShippingPriceRange         `json:"prerequisite_shipping_price_range,omitempty"`
+	PrerequisiteToEntitlementQuantityRatio *PrerequisiteToEntitlementQuantityRatio `json:"prerequisite_to_entitlement_quantity_ratio,omitempty"`
 }
 
-type prerequisiteSubtotalRange struct {
+type PrerequisiteSubtotalRange struct {
 	GreaterThanOrEqualTo string `json:"greater_than_or_equal_to,omitempty"`
 }
 
-type prerequisiteQuantityRange struct {
+type PrerequisiteQuantityRange struct {
 	GreaterThanOrEqualTo int `json:"greater_than_or_equal_to,omitempty"`
 }
 
-type prerequisiteShippingPriceRange struct {
+type PrerequisiteShippingPriceRange struct {
 	LessThanOrEqualTo string `json:"less_than_or_equal_to,omitempty"`
 }
 
-type prerequisiteToEntitlementQuantityRatio struct {
+type PrerequisiteToEntitlementQuantityRatio struct {
 	PrerequisiteQuantity int `json:"prerequisite_quantity,omitempty"`
 	EntitledQuantity     int `json:"entitled_quantity,omitempty"`
 }
