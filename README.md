@@ -20,16 +20,16 @@ This library has been tested against the following versions of Go
 ## Install
 
 ```console
-$ go get github.com/bold-commerce/go-shopify
+$ go get github.com/youbudong/shopify-go-api
 ```
 
 ## Use
 
 ```go
-import "github.com/bold-commerce/go-shopify"
+import "github.com/youbudong/shopify-go-api"
 ```
 
-This gives you access to the `goshopify` package.
+This gives you access to the `shopify` package.
 
 #### Oauth
 
@@ -38,7 +38,7 @@ Something like this will work:
 
 ```go
 // Create an app somewhere.
-app := goshopify.App{
+app := shopify.App{
     ApiKey: "abcd",
     ApiSecret: "efgh",
     RedirectUrl: "https://example.com/shopify/callback",
@@ -77,7 +77,7 @@ With a permanent access token, you can make API calls like this:
 
 ```go
 // Create an app somewhere.
-app := goshopify.App{
+app := shopify.App{
     ApiKey: "abcd",
     ApiSecret: "efgh",
     RedirectUrl: "https://example.com/shopify/callback",
@@ -85,7 +85,7 @@ app := goshopify.App{
 }
 
 // Create a new API client
-client := goshopify.NewClient(app, "shopname", "token")
+client := shopify.NewClient(app, "shopname", "token")
 
 // Fetch the number of products.
 numProducts, err := client.Product.Count(nil)
@@ -97,13 +97,13 @@ Private Shopify apps use basic authentication and do not require going through t
 
 ```go
 // Create an app somewhere.
-app := goshopify.App{
+app := shopify.App{
 	ApiKey: "apikey",
 	Password: "apipassword",
 }
 
 // Create a new API client (notice the token parameter is the empty string)
-client := goshopify.NewClient(app, "shopname", "")
+client := shopify.NewClient(app, "shopname", "")
 
 // Fetch the number of products.
 numProducts, err := client.Product.Count(nil)
@@ -119,7 +119,7 @@ to understand the format and release schedules. You can use `WithVersion` to spe
 of the API. If you do not use this option you will be defaulted to the oldest stable API.
 
 ```go
-client := goshopify.NewClient(app, "shopname", "", goshopify.WithVersion("2019-04"))
+client := shopify.NewClient(app, "shopname", "", shopify.WithVersion("2019-04"))
 ```
 
 #### WithRetry
@@ -129,7 +129,7 @@ the client a `WithRetry` option exists where you can pass an `int` of how many t
 before returning an error. `WithRetry` additionally supports retrying HTTP503 errors.
 
 ```go
-client := goshopify.NewClient(app, "shopname", "", goshopify.WithRetry(3))
+client := shopify.NewClient(app, "shopname", "", shopify.WithRetry(3))
 ```
 
 #### Query options
@@ -141,7 +141,7 @@ products created after January 1, 2016, you can do:
 ```go
 // Create standard CountOptions
 date := time.Date(2016, time.January, 1, 0, 0, 0, 0, time.UTC)
-options := goshopify.CountOptions{createdAtMin: date}
+options := shopify.CountOptions{createdAtMin: date}
 
 // Use the options when calling the API.
 numProducts, err := client.Product.Count(options)
@@ -187,7 +187,7 @@ type WebhooksResource struct {
 func FetchWebhooks() ([]Webhook, error) {
     path := "admin/webhooks.json"
     resource := new(WebhooksResource)
-    client := goshopify.NewClient(app, "shopname", "token")
+    client := shopify.NewClient(app, "shopname", "token")
 
     // resource gets modified when calling Get
     err := client.Get(path, resource, nil)
@@ -204,7 +204,7 @@ it with the `VerifyWebhookRequest` method.
 For example:
 ```go
 func ValidateWebhook(httpRequest *http.Request) (bool) {
-    shopifyApp := goshopify.App{ApiSecret: "ratz"}
+    shopifyApp := shopify.App{ApiSecret: "ratz"}
     return shopifyApp.VerifyWebhookRequest(httpRequest)
 }
 ```
