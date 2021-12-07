@@ -1,4 +1,4 @@
-package goshopify
+package shopify
 
 import (
 	"bytes"
