@@ -1,11 +1,8 @@
-# go-shopify
+# shopify-go-api
 
 The new home of Conversio's Shopify Go library.
 
-**Note**: The library does not have implementations of all Shopify resources, but it is being used in production and should be stable for usage. PRs for new resources and endpoints are welcome, or you can simply implement some yourself as-you-go. See the section "Using your own models" for more info.
-
-[![Build Status](https://travis-ci.org/bold-commerce/go-shopify.svg?branch=master)](https://travis-ci.org/bold-commerce/go-shopify)
-[![codecov](https://codecov.io/gh/bold-commerce/go-shopify/branch/master/graph/badge.svg)](https://codecov.io/gh/bold-commerce/go-shopify) [![Join the chat at https://gitter.im/bold-commerce/go-shopify](https://badges.gitter.im/bold-commerce/go-shopify.svg)](https://gitter.im/bold-commerce/go-shopify?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+forked from [bold-commerce/go-shopify](https://github.com/bold-commerce/go-shopify)
 
 ## Supported Go Versions
 
@@ -212,38 +209,3 @@ func ValidateWebhook(httpRequest *http.Request) (bool) {
 ## Develop and test
 `docker` and `docker-compose` must be installed
 
-### Mac/Linux/Windows with make
-Using the make file is the easiest way to get started with the tests and wraps the manual steps below with easy to use
-make commands.
-
-```shell
-make && make test
-```
-#### Makefile goals
-* `make` or `make container`: default goal is to make the `go-shopify:latest` build container
-* `make test`: run go test in the container
-* `make clean`: deletes the `go-shopify:latest` image and coverage output
-* `make coverage`: generates the coverage.html and opens it
-
-### Manually
-To run the tests you will need the `go-shopify:latest` image built to run your tests, to do this run
-```
-docker-compose build test
-```
-
-To run tests you can use run
-```shell
-docker-compose run --rm tests
-```
-
-To create a coverage profile run the following to generate a coverage.html
-```
-docker-compose run --rm dev sh -c 'go test -coverprofile=coverage.out ./... && go tool cover -html coverage.out -o coverage.html'
-```
-
-When done testing and you want to cleanup simply run
-```
-docker image rm go-shopify:latest
-```
-
-Read the docker-compose.yml and Dockerfile for further details.
