@@ -1,4 +1,4 @@
-module shopify-go-api
+module github.com/youbudong/shopify-go-api/v3
 
 go 1.17
 
