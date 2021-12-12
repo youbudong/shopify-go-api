@@ -17,13 +17,13 @@ This library has been tested against the following versions of Go
 ## Install
 
 ```console
-$ go get github.com/youbudong/shopify-go-api
+$ go get -u github.com/youbudong/shopify-go-api/v3
 ```
 
 ## Use
 
 ```go
-import "github.com/youbudong/shopify-go-api"
+import "github.com/youbudong/shopify-go-api/v3"
 ```
 
 This gives you access to the `shopify` package.
