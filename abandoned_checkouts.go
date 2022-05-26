@@ -2,6 +2,7 @@ package shopify
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 )
 
@@ -81,8 +82,31 @@ type AbandonedCheckoutsListOptions struct {
 
 // List abandoned checkouts
 func (s *AbandonedCheckoutsServiceOp) List(options interface{}) ([]AbandonedCheckouts, error) {
+	checkouts, _, err := s.ListWithPagination(options)
+	if err != nil {
+		return nil, err
+	}
+	return checkouts, nil
+}
+
+// ListWithPagination lists checkouts and return pagination to retrieve next/previous results.
+func (s *AbandonedCheckoutsServiceOp) ListWithPagination(options interface{}) ([]AbandonedCheckouts, *Pagination, error) {
 	path := fmt.Sprintf("%s.json", AbandonedCheckoutsBasePath)
 	resource := new(AbandonedCheckoutsesResource)
-	err := s.client.Get(path, resource, options)
-	return resource.AbandonedCheckoutses, err
+	headers := http.Header{}
+
+	headers, err := s.client.createAndDoGetHeaders("GET", path, nil, options, resource)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Extract pagination info from header
+	linkHeader := headers.Get("Link")
+
+	pagination, err := extractPagination(linkHeader)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return resource.AbandonedCheckoutses, pagination, nil
 }
