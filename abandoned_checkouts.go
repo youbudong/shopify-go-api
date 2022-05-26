@@ -26,11 +26,11 @@ type AbandonedCheckoutsServiceOp struct {
 // AbandonedCheckouts represents a shopify draft order
 type AbandonedCheckouts struct {
 	ID                       int64          `json:"id,omitempty"`
-	AbandonedCheckoutUrl     string         `json:"abandoned_checkout_url"`
+	AbandonedCheckoutUrl     string         `json:"abandoned_checkout_url,omitempty"`
 	BillingAddress           *Address       `json:"billing_address,omitempty"`
-	BuyerAcceptsMarketing    bool           `json:"buyer_accepts_marketing"`
-	BuyerAcceptsSmsMarketing bool           `json:"buyer_accepts_sms_marketing"`
-	CartToken                string         `json:"cart_token"`
+	BuyerAcceptsMarketing    bool           `json:"buyer_accepts_marketing,omitempty"`
+	BuyerAcceptsSmsMarketing bool           `json:"buyer_accepts_sms_marketing,omitempty"`
+	CartToken                string         `json:"cart_token,omitempty"`
 	Customer                 *Customer      `json:"customer,omitempty"`
 	CustomerLocale           string         `json:"customer_locale,omitempty"`
 	DeviceID                 int64          `json:"device_id,omitempty"`
