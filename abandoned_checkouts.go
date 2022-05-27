@@ -82,7 +82,6 @@ type AbandonedCheckoutsListOptions struct {
 func (s *AbandonedCheckoutsServiceOp) List(options interface{}) ([]AbandonedCheckouts, error) {
 	path := fmt.Sprintf("%s.json", AbandonedCheckoutsBasePath)
 	resource := new(AbandonedCheckoutsesResource)
-	fmt.Println(path)
 	err := s.client.Get(path, resource, options)
 	return resource.AbandonedCheckoutses, err
 }
