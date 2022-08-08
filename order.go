@@ -176,7 +176,7 @@ type LineItem struct {
 	VariantID                  int64                 `json:"variant_id,omitempty"`
 	Quantity                   int                   `json:"quantity,omitempty"`
 	Price                      *decimal.Decimal      `json:"price,omitempty"`
-	PriceSet                   *PriceSet             `json:"price_set" bson:"price_set"`
+	PriceSet                   *PriceSet             `json:"price_set,omitempty"`
 	TotalDiscount              *decimal.Decimal      `json:"total_discount,omitempty"`
 	Title                      string                `json:"title,omitempty"`
 	VariantTitle               string                `json:"variant_title,omitempty"`
