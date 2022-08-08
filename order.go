@@ -202,13 +202,13 @@ type LineItem struct {
 }
 
 type PriceSet struct {
-	ShopMoney        PriceSetItem `json:"shop_money"`
-	PresentmentMoney PriceSetItem `json:"presentment_money"`
+	ShopMoney        *PriceSetItem `json:"shop_money,omitempty"`
+	PresentmentMoney *PriceSetItem `json:"presentment_money,omitempty"`
 }
 
 type PriceSetItem struct {
-	Amount       string `json:"amount"`
-	CurrencyCode string `json:"currency_code"`
+	Amount       string `json:"amount,omitempty"`
+	CurrencyCode string `json:"currency_code,omitempty"`
 }
 
 type DiscountAllocations struct {
