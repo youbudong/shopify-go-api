@@ -25,6 +25,7 @@ type CustomerService interface {
 	Delete(int64) error
 	ListOrders(int64, interface{}) ([]Order, error)
 	ListTags(interface{}) ([]string, error)
+	SendInvite(int64, interface{}) error
 
 	// MetafieldsService used for Customer resource to communicate with Metafields resource
 	MetafieldsService
@@ -212,4 +213,10 @@ func (s *CustomerServiceOp) UpdateMetafield(customerID int64, metafield Metafiel
 func (s *CustomerServiceOp) DeleteMetafield(customerID int64, metafieldID int64) error {
 	metafieldService := &MetafieldServiceOp{client: s.client, resource: customersResourceName, resourceID: customerID}
 	return metafieldService.Delete(metafieldID)
+}
+
+func (s *CustomerServiceOp) SendInvite(customerID int64, options interface{}) error {
+	path := fmt.Sprintf("%s/%d/send_invite.json", customersBasePath, customerID)
+	err := s.client.Post(path, nil, options)
+	return err
 }
