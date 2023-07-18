@@ -1,4 +1,4 @@
-package goshopify
+package shopify
 
 import (
 	"fmt"
@@ -127,8 +127,8 @@ type FulfillmentOrder struct {
 	CreatedAt           time.Time                           `json:"created_at,omitempty"`
 	DeliveryMethod      FulfillmentOrderDeliveryMethod      `json:"delivery_method,omitempty"`
 	Destination         FulfillmentOrderDestination         `json:"destination,omitempty"`
-	FulfillAt           OnlyDate                            `json:"fulfill_at,omitempty"`
-	FulfillBy           OnlyDate                            `json:"fulfill_by,omitempty"`
+	FulfillAt           string                              `json:"fulfill_at,omitempty"`
+	FulfillBy           string                              `json:"fulfill_by,omitempty"`
 	FulfillmentHolds    []FulfillmentOrderHold              `json:"fulfillment_holds,omitempty"`
 	InternationalDuties FulfillmentOrderInternationalDuties `json:"international_duties,omitempty"`
 	LineItems           []FulfillmentOrderLineItem          `json:"line_items,omitempty"`

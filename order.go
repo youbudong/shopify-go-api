@@ -30,7 +30,7 @@ type OrderService interface {
 	MetafieldsService
 
 	// FulfillmentsService used for Order resource to communicate with Fulfillments resource
-	FulfillmentsService
+	// FulfillmentsService
 }
 
 // OrderServiceOp handles communication with the order related methods of the
@@ -527,11 +527,11 @@ func (s *OrderServiceOp) GetFulfillment(orderID int64, fulfillmentID int64, opti
 	return fulfillmentService.Get(fulfillmentID, options)
 }
 
-// Create a new fulfillment for an order
-func (s *OrderServiceOp) CreateFulfillment(orderID int64, fulfillment Fulfillment) (*Fulfillment, error) {
-	fulfillmentService := &FulfillmentServiceOp{client: s.client, resource: ordersResourceName, resourceID: orderID}
-	return fulfillmentService.Create(fulfillment)
-}
+// // Create a new fulfillment for an order
+// func (s *OrderServiceOp) CreateFulfillment(fulfillment FulfillmentInfo) (*Fulfillment, error) {
+// 	fulfillmentService := &FulfillmentServiceOp{client: s.client, resource: fulfillmentsResourceName}
+// 	return fulfillmentService.Create(fulfillment)
+// }
 
 // Update an existing fulfillment for an order
 func (s *OrderServiceOp) UpdateFulfillment(orderID int64, fulfillment Fulfillment) (*Fulfillment, error) {

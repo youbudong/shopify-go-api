@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const fulfillmentsResourceName = "fulfillments"
+
 // FulfillmentService is an interface for interfacing with the fulfillment endpoints
 // of the Shopify API.
 // https://help.shopify.com/api/reference/fulfillment
@@ -12,7 +14,7 @@ type FulfillmentService interface {
 	List(interface{}) ([]Fulfillment, error)
 	Count(interface{}) (int, error)
 	Get(int64, interface{}) (*Fulfillment, error)
-	Create(Fulfillment) (*Fulfillment, error)
+	Create(FulfillmentInfo) (*Fulfillment, error)
 	Update(Fulfillment) (*Fulfillment, error)
 	Complete(int64) (*Fulfillment, error)
 	Transition(int64) (*Fulfillment, error)
@@ -26,7 +28,7 @@ type FulfillmentsService interface {
 	ListFulfillments(int64, interface{}) ([]Fulfillment, error)
 	CountFulfillments(int64, interface{}) (int, error)
 	GetFulfillment(int64, int64, interface{}) (*Fulfillment, error)
-	CreateFulfillment(int64, Fulfillment) (*Fulfillment, error)
+	CreateFulfillment(FulfillmentInfo) (*Fulfillment, error)
 	UpdateFulfillment(int64, Fulfillment) (*Fulfillment, error)
 	CompleteFulfillment(int64, int64) (*Fulfillment, error)
 	TransitionFulfillment(int64, int64) (*Fulfillment, error)
@@ -43,22 +45,60 @@ type FulfillmentServiceOp struct {
 
 // Fulfillment represents a Shopify fulfillment.
 type Fulfillment struct {
-	ID              int64      `json:"id,omitempty"`
-	OrderID         int64      `json:"order_id,omitempty"`
-	LocationID      int64      `json:"location_id,omitempty"`
-	Status          string     `json:"status,omitempty"`
-	CreatedAt       *time.Time `json:"created_at,omitempty"`
-	Service         string     `json:"service,omitempty"`
-	UpdatedAt       *time.Time `json:"updated_at,omitempty"`
-	TrackingCompany string     `json:"tracking_company,omitempty"`
-	ShipmentStatus  string     `json:"shipment_status,omitempty"`
-	TrackingNumber  string     `json:"tracking_number,omitempty"`
-	TrackingNumbers []string   `json:"tracking_numbers,omitempty"`
-	TrackingUrl     string     `json:"tracking_url,omitempty"`
-	TrackingUrls    []string   `json:"tracking_urls,omitempty"`
-	Receipt         Receipt    `json:"receipt,omitempty"`
-	LineItems       []LineItem `json:"line_items,omitempty"`
-	NotifyCustomer  bool       `json:"notify_customer"`
+	ID                int64       `json:"id"`
+	OrderID           int64       `json:"order_id"`
+	Status            string      `json:"status"`
+	CreatedAt         time.Time   `json:"created_at"`
+	Service           string      `json:"service"`
+	UpdatedAt         time.Time   `json:"updated_at"`
+	TrackingCompany   string      `json:"tracking_company"`
+	ShipmentStatus    interface{} `json:"shipment_status"`
+	LocationID        int64       `json:"location_id"`
+	OriginAddress     interface{} `json:"origin_address"`
+	LineItems         []LineItem  `json:"line_items"`
+	TrackingNumber    string      `json:"tracking_number"`
+	TrackingNumbers   []string    `json:"tracking_numbers"`
+	TrackingURL       string      `json:"tracking_url"`
+	TrackingURLs      []string    `json:"tracking_urls"`
+	Receipt           Receipt     `json:"receipt"`
+	Name              string      `json:"name"`
+	AdminGraphqlAPIID string      `json:"admin_graphql_api_id"`
+}
+
+type FulfillmentInfo struct {
+	LineItemsByFulfillmentOrder []FulfillmentOrderItem `json:"line_items_by_fulfillment_order,omitempty"`
+	Message                     string                 `json:"message,omitempty"`
+	NotifyCustomer              bool                   `json:"notify_customer,omitempty"`
+	OriginAddress               *OriginAddress         `json:"origin_address,omitempty"`
+	TrackingInfo                TrackingInfo           `json:"tracking_info,omitempty"`
+}
+
+type FulfillmentOrderItem struct {
+	FulfillmentOrderID        int64                 `json:"fulfillment_order_id,omitempty"`
+	FulfillmentOrderLineItems []FulfillmentLineItem `json:"fulfillment_order_line_items,omitempty"`
+}
+
+// The line items in the fulfillment.
+type FulfillmentLineItem struct {
+	ID       int64 `json:"id,omitempty"`
+	Quantity int64 `json:"quantity,omitempty"`
+}
+
+// The address of the fulfillment location.
+type OriginAddress struct {
+	Address1     string `json:"address1"`
+	Address2     string `json:"address2"`
+	City         string `json:"city"`
+	CountryCode  string `json:"country_code"`
+	ProvinceCode string `json:"province_code"`
+	Zip          string `json:"zip"`
+}
+
+// The tracking information for the fulfillment.
+type TrackingInfo struct {
+	Company string `json:"company,omitempty"`
+	Number  string `json:"number,omitempty"`
+	Url     string `json:"url,omitempty"`
 }
 
 // Receipt represents a Shopify receipt.
@@ -70,6 +110,10 @@ type Receipt struct {
 // FulfillmentResource represents the result from the fulfillments/X.json endpoint
 type FulfillmentResource struct {
 	Fulfillment *Fulfillment `json:"fulfillment"`
+}
+
+type FulfillmentInfoResource struct {
+	Fulfillment *FulfillmentInfo `json:"fulfillment"`
 }
 
 // FulfillmentsResource represents the result from the fullfilments.json endpoint
@@ -103,10 +147,10 @@ func (s *FulfillmentServiceOp) Get(fulfillmentID int64, options interface{}) (*F
 }
 
 // Create a new fulfillment
-func (s *FulfillmentServiceOp) Create(fulfillment Fulfillment) (*Fulfillment, error) {
+func (s *FulfillmentServiceOp) Create(fulfillment FulfillmentInfo) (*Fulfillment, error) {
 	prefix := FulfillmentPathPrefix(s.resource, s.resourceID)
 	path := fmt.Sprintf("%s.json", prefix)
-	wrappedData := FulfillmentResource{Fulfillment: &fulfillment}
+	wrappedData := FulfillmentInfoResource{Fulfillment: &fulfillment}
 	resource := new(FulfillmentResource)
 	err := s.client.Post(path, wrappedData, resource)
 	return resource.Fulfillment, err
